@@ -13,8 +13,6 @@
 #include "binary_writer.hpp"
 #include "utils.hpp"
 
-#define GET_URL std::string("/wiki/Guide:Pet_Battle_Abilities?action=raw").c_str()
-
 struct item {
     uint32_t m_id;
     std::string m_name;
@@ -198,7 +196,7 @@ void set_pet_ability_data(const uint8_t& element, const std::string& data) {
 }
 void get_pet_abilities() {
     httplib::Client client("https://growtopia.fandom.com");
-    auto res = client.Get(GET_URL);
+    auto res = client.Get("/wiki/Guide:Pet_Battle_Abilities?action=raw");
     if (res->status != 200)
         return;
     std::string response = res->body;
@@ -206,23 +204,12 @@ void get_pet_abilities() {
     std::vector<std::string> splited_element = utils::explode("==", response.substr(element_header + 2, element_ending - element_header - 2));
     for (auto element = 0; element < splited_element.size(); element++) {
         switch (element) {
-        case ELEMENT_TYPE_AIR: {
-            set_pet_ability_data(ELEMENT_TYPE_AIR, splited_element[element]);
-            break;
-        }
-        case ELEMENT_TYPE_EARTH: {
+        case ELEMENT_TYPE_AIR:
+	case ELEMENT_TYPE_EARTH:
+        case ELEMENT_TYPE_FIRE: 
+	case ELEMENT_TYPE_WATER: {
             utils::trim(splited_element[element]);
-            set_pet_ability_data(ELEMENT_TYPE_EARTH, splited_element[element]);
-            break;
-        }
-        case ELEMENT_TYPE_FIRE: {
-            utils::trim(splited_element[element]);
-            set_pet_ability_data(ELEMENT_TYPE_FIRE, splited_element[element]);
-            break;
-        }
-        case ELEMENT_TYPE_WATER: {
-            utils::trim(splited_element[element]);
-            set_pet_ability_data(ELEMENT_TYPE_WATER, splited_element[element]);
+            set_pet_ability_data(element, splited_element[element]);
             break;
         }
         default:
@@ -239,7 +226,6 @@ void output_data() {
     buffer->write(std::string("GrowXYZ"));
     buffer->write((int)g_pet_ability.size());
     for (int i = 0; i < g_pet_ability.size(); i++) {
-        fmt::print("[{}]: {} -> {}\n", g_pet_ability[i].m_item_id, g_items[g_pet_ability[i].m_item_id].m_name, g_pet_ability[i].m_element);
         buffer->write(g_pet_ability[i].m_item_id);
         buffer->write(g_pet_ability[i].m_element);
         buffer->write(g_pet_ability[i].m_ability);
@@ -262,5 +248,5 @@ int main(){
     get_pet_abilities();
 	output_data();
     while (true);
-	return 0;
+    return 0;
 }
